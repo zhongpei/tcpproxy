@@ -182,7 +182,7 @@ func TestProxyAlwaysMatch(t *testing.T) {
 	defer back.Close()
 
 	p := testProxy(t, front)
-	p.AddRoute(testFrontAddr, To(back.Addr().String()))
+	p.AddRoute(testFrontAddr, To(back.Addr().String()),Limiter(100,150))
 	if err := p.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -219,8 +219,8 @@ func TestProxyHTTP(t *testing.T) {
 	defer backBar.Close()
 
 	p := testProxy(t, front)
-	p.AddHTTPHostRoute(testFrontAddr, "foo.com", To(backFoo.Addr().String()))
-	p.AddHTTPHostRoute(testFrontAddr, "bar.com", To(backBar.Addr().String()))
+	p.AddHTTPHostRoute(testFrontAddr, "foo.com", To(backFoo.Addr().String()),Limiter(100,150))
+	p.AddHTTPHostRoute(testFrontAddr, "bar.com", To(backBar.Addr().String()),Limiter(100,150))
 	if err := p.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -258,8 +258,8 @@ func TestProxySNI(t *testing.T) {
 	defer backBar.Close()
 
 	p := testProxy(t, front)
-	p.AddSNIRoute(testFrontAddr, "foo.com", To(backFoo.Addr().String()))
-	p.AddSNIRoute(testFrontAddr, "bar.com", To(backBar.Addr().String()))
+	p.AddSNIRoute(testFrontAddr, "foo.com", To(backFoo.Addr().String()),Limiter(100,150))
+	p.AddSNIRoute(testFrontAddr, "bar.com", To(backBar.Addr().String()),Limiter(100,150))
 	if err := p.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +297,7 @@ func TestProxyPROXYOut(t *testing.T) {
 	p.AddRoute(testFrontAddr, &DialProxy{
 		Addr:                 back.Addr().String(),
 		ProxyProtocolVersion: 1,
-	})
+	},Limiter(100,150))
 	if err := p.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -457,10 +457,10 @@ func TestProxyACME(t *testing.T) {
 	defer backQuux.Close()
 
 	p := testProxy(t, front)
-	p.AddSNIRoute(testFrontAddr, "foo.com", To(backFoo.Addr().String()))
-	p.AddSNIRoute(testFrontAddr, "bar.com", To(backBar.Addr().String()))
+	p.AddSNIRoute(testFrontAddr, "foo.com", To(backFoo.Addr().String()),Limiter(100,150))
+	p.AddSNIRoute(testFrontAddr, "bar.com", To(backBar.Addr().String()),Limiter(100,150))
 	p.AddStopACMESearch(testFrontAddr)
-	p.AddSNIRoute(testFrontAddr, "quux.com", To(backQuux.Addr().String()))
+	p.AddSNIRoute(testFrontAddr, "quux.com", To(backQuux.Addr().String()),Limiter(100,150))
 	if err := p.Start(); err != nil {
 		t.Fatal(err)
 	}

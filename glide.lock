@@ -1,0 +1,10 @@
+hash: d77cb0db3a4625567d25f0f2791a5be4f0d5589fe17b210cf9cfbb67ba115087
+updated: 2018-11-19T11:56:16.082937+08:00
+imports:
+- name: golang.org/x/time
+  version: 85acf8d2951cb2a3bde7632f9ff273ef0379bcbd
+  subpackages:
+  - rate
+testImports:
+- name: github.com/armon/go-proxyproto
+  version: 5b7edb60ff5f69b60d1950397f7bde6171f1807d

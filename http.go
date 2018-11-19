@@ -27,8 +27,8 @@ import (
 // additional routes on ipPort.
 //
 // The ipPort is any valid net.Listen TCP address.
-func (p *Proxy) AddHTTPHostRoute(ipPort, httpHost string, dest Target) {
-	p.AddHTTPHostMatchRoute(ipPort, equals(httpHost), dest)
+func (p *Proxy) AddHTTPHostRoute(ipPort, httpHost string, dest Target, limit *ConnLimiter) {
+	p.AddHTTPHostMatchRoute(ipPort, equals(httpHost), dest,limit)
 }
 
 // AddHTTPHostMatchRoute appends a route to the ipPort listener that
@@ -37,8 +37,8 @@ func (p *Proxy) AddHTTPHostRoute(ipPort, httpHost string, dest Target) {
 // for any additional routes on ipPort.
 //
 // The ipPort is any valid net.Listen TCP address.
-func (p *Proxy) AddHTTPHostMatchRoute(ipPort string, match Matcher, dest Target) {
-	p.addRoute(ipPort, httpHostMatch{match, dest})
+func (p *Proxy) AddHTTPHostMatchRoute(ipPort string, match Matcher, dest Target, limit *ConnLimiter) {
+	p.addRoute(ipPort, httpHostMatch{match, dest},limit)
 }
 
 type httpHostMatch struct {

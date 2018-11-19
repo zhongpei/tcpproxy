@@ -61,7 +61,30 @@ import (
 	"log"
 	"net"
 	"time"
+	"github.com/golang/time/rate"
 )
+
+type ConnLimiter struct {
+	nc *rate.Limiter // new connections limiter
+}
+
+func (cl *ConnLimiter) AllowNewConn() bool {
+	if cl.nc == nil {
+		return true
+	}
+	return cl.nc.Allow()
+}
+
+func Limiter(r rate.Limit, burst int) *ConnLimiter {
+	if r == 0 {
+		return &ConnLimiter{
+			nc: nil,
+		}
+	}
+	return &ConnLimiter{
+		nc: rate.NewLimiter (r, burst),
+	}
+}
 
 // Proxy is a proxy. Its zero value is a valid proxy that does
 // nothing. Call methods to add routes before calling Start or Run.
@@ -94,6 +117,7 @@ func equals(want string) Matcher {
 // config contains the proxying state for one listener.
 type config struct {
 	routes      []route
+	connLimiter *ConnLimiter
 	acmeTargets []Target // accumulates targets that should be probed for acme.
 	stopACME    bool     // if true, AddSNIRoute doesn't add targets to acmeTargets.
 }
@@ -130,9 +154,10 @@ func (p *Proxy) configFor(ipPort string) *config {
 	return p.configs[ipPort]
 }
 
-func (p *Proxy) addRoute(ipPort string, r route) {
+func (p *Proxy) addRoute(ipPort string, r route, limit *ConnLimiter) {
 	cfg := p.configFor(ipPort)
 	cfg.routes = append(cfg.routes, r)
+	cfg.connLimiter = limit
 }
 
 // AddRoute appends an always-matching route to the ipPort listener,
@@ -142,8 +167,8 @@ func (p *Proxy) addRoute(ipPort string, r route) {
 // proxies), or as the final fallback rule for an ipPort.
 //
 // The ipPort is any valid net.Listen TCP address.
-func (p *Proxy) AddRoute(ipPort string, dest Target) {
-	p.addRoute(ipPort, fixedTarget{dest})
+func (p *Proxy) AddRoute(ipPort string, dest Target, limit *ConnLimiter) {
+	p.addRoute(ipPort, fixedTarget{dest}, limit)
 }
 
 type fixedTarget struct {
@@ -200,7 +225,7 @@ func (p *Proxy) Start() error {
 			return err
 		}
 		p.lns = append(p.lns, ln)
-		go p.serveListener(errc, ln, config.routes)
+		go p.serveListener(errc, ln, config.routes, config.connLimiter)
 	}
 	go p.awaitFirstError(errc)
 	return nil
@@ -211,13 +236,19 @@ func (p *Proxy) awaitFirstError(errc <-chan error) {
 	close(p.donec)
 }
 
-func (p *Proxy) serveListener(ret chan<- error, ln net.Listener, routes []route) {
+func (p *Proxy) serveListener(ret chan<- error, ln net.Listener, routes []route, limit *ConnLimiter) {
 	for {
 		c, err := ln.Accept()
 		if err != nil {
 			ret <- err
 			return
 		}
+		if limit!=nil && !limit.AllowNewConn(){
+			log.Printf("tcpproxy: rate limit conn %v/%v; closing", c.RemoteAddr().String(), c.LocalAddr().String())
+			goCloseConn(c)
+			continue
+		}
+
 		go p.serveConn(c, routes)
 	}
 }
