@@ -1,6 +1,5 @@
 package: .
 import:
 - package: golang.org/x/time
-- package: github.com/zhongpei/tcpproxy
 testImport:
 - package: github.com/armon/go-proxyproto
