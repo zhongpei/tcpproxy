@@ -82,7 +82,7 @@ func Limiter(r uint64, burst int) *ConnLimiter {
 		}
 	}
 	return &ConnLimiter{
-		nc: rate.NewLimiter ((rate.Limit)r, burst),
+		nc: rate.NewLimiter(rate.Limit(r), burst),
 	}
 }
 
