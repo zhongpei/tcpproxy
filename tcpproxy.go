@@ -75,14 +75,14 @@ func (cl *ConnLimiter) AllowNewConn() bool {
 	return cl.nc.Allow()
 }
 
-func Limiter(r rate.Limit, burst int) *ConnLimiter {
+func Limiter(r uint64, burst int) *ConnLimiter {
 	if r == 0 {
 		return &ConnLimiter{
 			nc: nil,
 		}
 	}
 	return &ConnLimiter{
-		nc: rate.NewLimiter (r, burst),
+		nc: rate.NewLimiter ((rate.Limit)r, burst),
 	}
 }
 
